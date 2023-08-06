@@ -21,6 +21,13 @@ namespace ReMix.Models
             AddFiles(filePaths);
         }
 
+        public SongStem(string folderTitle, string category)
+        {
+            string folder = "Audio/" + folderTitle + "/" + category;
+
+            AddFiles(Directory.GetFiles(folder).ToList());
+        }
+
         public void Dispose()
         {
             AudioFileReaders.ForEach(r => r.Dispose());
@@ -41,9 +48,11 @@ namespace ReMix.Models
         {
             AudioFileReader reader = new AudioFileReader(path);
             AudioFileReaders.Add(reader);
-            //Convert from Mono to Stereo
-            if(reader.WaveFormat.Channels == 1)
+
+            //1 channel = Mono, 2 = Stereo
+            if (reader.WaveFormat.Channels == 1)
             {
+                //Convert from Mono to Stereo
                 MonoToStereoSampleProvider stereo = new MonoToStereoSampleProvider(reader);
                 IWaveProvider waveProvider = stereo.ToWaveProvider16();
                 ISampleProvider sampleProvider = waveProvider.ToSampleProvider();
@@ -53,6 +62,12 @@ namespace ReMix.Models
             {
                 SampleProviders.Add(reader);
             }
+        }
+
+        public ISampleProvider GetSampleProvider()
+        {
+            MixingSampleProvider mixer = new MixingSampleProvider(SampleProviders);
+            return mixer;
         }
     }
 }

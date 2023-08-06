@@ -1,6 +1,8 @@
+using NAudio.Utils;
 using NAudio.Wave;
 using NAudio.Wave.SampleProviders;
 using ReMix.Models;
+using System.ComponentModel;
 using System.IO;
 
 namespace ReMix
@@ -8,9 +10,11 @@ namespace ReMix
     public partial class Form1 : Form
     {
         CancellationToken _cancellationToken;
+        bool stateChanged = false;
         public Form1()
         {
             InitializeComponent();
+            musicBackgroundWorker.WorkerSupportsCancellation = true;
         }
 
         private void button1_Click(object sender, EventArgs e)
@@ -21,7 +25,7 @@ namespace ReMix
 
         private void ShiftAudio()
         {
-            string inPath = @"C:\Users\dawso\repos\ReMix\ReMix\Audio\Rick Astley - Never Gonna Give You Up (Vocals Only).mp3";
+            string inPath = @"C:\Users\dawso\repos\ReMix\ReMix\Audio\Never Gonna Give You Up\Vocals.flac";
             //Every tone raise raised by one note (e.g. C goes to D, then to E)
             //Raising by a semi-tone makes it a sharp (#) and lowering by a semi-tone makes it a flat (b)
             double semitone = Math.Pow(2, 1.0 / 12);
@@ -50,29 +54,13 @@ namespace ReMix
         {
             _cancellationToken = new CancellationToken();
 
-            using(SongStem leadStem = new SongStem())
-            using(SongStem loopStem = new SongStem())
-            using(SongStem beatStem = new SongStem())
-            using(SongStem bassStem = new SongStem())
+            //using (Song song = new Song("Never Gonna Give You Up"))
+            using (Song song = new Song("Cant Feel My Face"))
             {
-                leadStem.AddFile(@"C:\Users\dawso\repos\ReMix\ReMix\Audio\Never Gonna Give You Up\Vocals.flac");
-                leadStem.AddFile(@"C:\Users\dawso\repos\ReMix\ReMix\Audio\Never Gonna Give You Up\Backing.flac");
-                loopStem.AddFile(@"C:\Users\dawso\repos\ReMix\ReMix\Audio\Never Gonna Give You Up\Guitar.flac");
-                loopStem.AddFile(@"C:\Users\dawso\repos\ReMix\ReMix\Audio\Never Gonna Give You Up\Keys.flac");
-                beatStem.AddFile(@"C:\Users\dawso\repos\ReMix\ReMix\Audio\Never Gonna Give You Up\Snare.flac");
-                beatStem.AddFile(@"C:\Users\dawso\repos\ReMix\ReMix\Audio\Never Gonna Give You Up\Kick (Mono).flac");
-                beatStem.AddFile(@"C:\Users\dawso\repos\ReMix\ReMix\Audio\Never Gonna Give You Up\Cymbals.flac");
-                bassStem.AddFile(@"C:\Users\dawso\repos\ReMix\ReMix\Audio\Never Gonna Give You Up\Bass (Mono).flac");
-
-                List<ISampleProvider> sampleProviders = new List<ISampleProvider>();
-                sampleProviders.AddRange(leadStem.SampleProviders);
-                sampleProviders.AddRange(loopStem.SampleProviders);
-                sampleProviders.AddRange(beatStem.SampleProviders);
-                sampleProviders.AddRange(bassStem.SampleProviders);
-
-                MixingSampleProvider mixer = new MixingSampleProvider(sampleProviders);
+                MixingSampleProvider mixer = new MixingSampleProvider(song.GetSampleProviders());
                 using (WaveOutEvent device = new WaveOutEvent())
                 {
+                    //device.Init(mixer.Skip(TimeSpan.FromSeconds(20)).Take(TimeSpan.FromSeconds(100)));
                     device.Init(mixer.Take(TimeSpan.FromSeconds(100)));
                     //10% volume
                     device.Volume = .1F;
@@ -84,46 +72,119 @@ namespace ReMix
                     device.Stop();
                 }
             }
+        }
 
-            //string bassPath = @"C:\Users\dawso\repos\ReMix\ReMix\Audio\Never Gonna Give You Up\Bass (Mono).flac";
-            //string beatPath = @"C:\Users\dawso\repos\ReMix\ReMix\Audio\Never Gonna Give You Up\Snare.flac";
-            //string beat2Path = @"C:\Users\dawso\repos\ReMix\ReMix\Audio\Never Gonna Give You Up\Kick (Mono).flac";
-            //string beat3Path = @"C:\Users\dawso\repos\ReMix\ReMix\Audio\Never Gonna Give You Up\Cymbals.flac";
-            //string leadPath = @"C:\Users\dawso\repos\ReMix\ReMix\Audio\Never Gonna Give You Up\Vocals.flac";
-            //string loopPath = @"C:\Users\dawso\repos\ReMix\ReMix\Audio\Never Gonna Give You Up\Guitar.flac";
+        private void checkBoxLead_CheckedChanged(object sender, EventArgs e)
+        {
+            stateChanged = true;
+        }
 
-            //using(AudioFileReader bassReader = new AudioFileReader(bassPath))
-            //using(AudioFileReader beatReader = new AudioFileReader(beatPath))
-            //using(AudioFileReader beat2Reader = new AudioFileReader(beat2Path))
-            //using(AudioFileReader beat3Reader = new AudioFileReader(beat3Path))
-            //using(AudioFileReader leadReader = new AudioFileReader(leadPath))
-            //using(AudioFileReader loopReader = new AudioFileReader(loopPath))
-            //{
-            //    MonoToStereoSampleProvider stereoBass = new MonoToStereoSampleProvider(bassReader);
-            //    IWaveProvider bassWaveProvider = stereoBass.ToWaveProvider16();
-            //    ISampleProvider bassSampleProvider = bassWaveProvider.ToSampleProvider();
+        private void checkBoxLoop_CheckedChanged(object sender, EventArgs e)
+        {
+            stateChanged = true;
+        }
 
-            //    MonoToStereoSampleProvider stereoBeat2 = new MonoToStereoSampleProvider(beat2Reader);
-            //    IWaveProvider beat2WaveProvider = stereoBeat2.ToWaveProvider16();
-            //    ISampleProvider beat2SampleProvider = beat2WaveProvider.ToSampleProvider();
-            //    //beatReader.Position = beatReader.WaveFormat.AverageBytesPerSecond * 22;
-            //    //loopReader.Position = (int)Math.Round(loopReader.WaveFormat.AverageBytesPerSecond * 7.5);
-            //    //beatReader.Volume = 0.1F;
-            //    //leadReader.Volume = 0.1F;
-            //    MixingSampleProvider mixer = new MixingSampleProvider(new[] { leadReader, loopReader, beatReader, bassSampleProvider, beat2SampleProvider, beat3Reader });
-            //    using (WaveOutEvent device = new WaveOutEvent())
-            //    {
-            //        device.Init(mixer.Take(TimeSpan.FromSeconds(100)));
-            //        //10% volume
-            //        device.Volume = .1F;
-            //        device.Play();
-            //        while (device.PlaybackState == PlaybackState.Playing && !_cancellationToken.IsCancellationRequested)
-            //        {
-            //            Thread.Sleep(500);
-            //        }
-            //        device.Stop();
-            //    }
-            //}
+        private void checkBoxBeat_CheckedChanged(object sender, EventArgs e)
+        {
+            stateChanged = true;
+        }
+
+        private void checkBoxBass_CheckedChanged(object sender, EventArgs e)
+        {
+            stateChanged = true;
+        }
+
+        private void backgroundWorker1_DoWork(object sender, DoWorkEventArgs e)
+        {
+            //TODO: get bpm per song
+            //int bpm = 112;
+            int bpm = 108;
+
+            double beatSeconds = bpm / 60D;
+            double secondsPerBeat = 60D / bpm;
+            double startOffsetMilliseconds = 48.75 * 1000;
+
+            double endPosition = 0;
+            BackgroundWorker worker = sender as BackgroundWorker;
+
+            while (!worker.CancellationPending)
+            {
+                using (Song song = new Song("Cant Feel My Face"))
+                {
+                    List<ISampleProvider> sampleProviders = new List<ISampleProvider>();
+                    if (checkBoxLead.Checked)
+                    {
+                        ISampleProvider leadSample = song.LeadStem.GetSampleProvider();
+                        leadSample = leadSample.Skip(TimeSpan.FromMilliseconds(endPosition + startOffsetMilliseconds));
+                        sampleProviders.Add(leadSample);
+                    }
+                    if (checkBoxLoop.Checked)
+                    {
+                        ISampleProvider loopSample = song.LoopStem.GetSampleProvider();
+                        loopSample = loopSample.Skip(TimeSpan.FromMilliseconds(endPosition + startOffsetMilliseconds));
+                        sampleProviders.Add(loopSample);
+                    }
+                    if (checkBoxBeat.Checked)
+                    {
+                        ISampleProvider beatSample = song.BeatStem.GetSampleProvider();
+                        beatSample = beatSample.Skip(TimeSpan.FromMilliseconds(endPosition + startOffsetMilliseconds));
+                        sampleProviders.Add(beatSample);
+                    }
+                    if (checkBoxBass.Checked)
+                    {
+                        ISampleProvider bassSample = song.BassStem.GetSampleProvider();
+                        bassSample = bassSample.Skip(TimeSpan.FromMilliseconds(endPosition + startOffsetMilliseconds));
+                        sampleProviders.Add(bassSample);
+                    }
+
+                    if (sampleProviders.Count() > 0)
+                    {
+                        MixingSampleProvider mixer = new MixingSampleProvider(sampleProviders);
+                        using (WaveOutEvent device = new WaveOutEvent())
+                        {
+                            device.Init(mixer);
+                            //10% volume
+                            device.Volume = .1F;
+                            device.Play();
+                            while (device.PlaybackState == PlaybackState.Playing && !worker.CancellationPending)
+                            {
+                                if (device.GetPositionTimeSpan().TotalSeconds + (endPosition / 1000) >= secondsPerBeat * 120)
+                                {
+                                    endPosition = 0;
+                                    stateChanged = false;
+                                    break;
+                                }
+
+                                if (stateChanged)
+                                {
+                                    endPosition += device.GetPositionTimeSpan().TotalMilliseconds;
+                                    stateChanged = false;
+                                    break;
+                                }
+                                Thread.Sleep(1);
+                            }
+                            device.Stop();
+                        }
+                    }
+                    else
+                    {
+                        Thread.Sleep((int)Math.Round(beatSeconds * 1000));
+                    }
+                }
+            }
+        }
+
+        private void btnPlay_Click(object sender, EventArgs e)
+        {
+            if (musicBackgroundWorker.IsBusy != true)
+            {
+                // Start the asynchronous operation.
+                musicBackgroundWorker.RunWorkerAsync();
+            }
+            else
+            {
+                musicBackgroundWorker.CancelAsync();
+            }
         }
     }
 }
